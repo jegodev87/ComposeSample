@@ -11,11 +11,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.sample.test.ui.theme.machine_test_compose.ScreenRoutes
 import com.sample.test.ui.theme.machine_test_compose.TaskViewModel
+import com.sample.test.ui.theme.mvi_task.TodoViewmodel
 
 @Composable
  fun MachineTestApp(paddingValues: PaddingValues, navController: NavHostController) {
 
-    val viewModel: TaskViewModel = hiltViewModel()
+    val viewModel: TodoViewmodel = hiltViewModel()
+    val state = viewModel.state
     NavHost(
         modifier = Modifier
             .fillMaxSize()
@@ -24,11 +26,22 @@ import com.sample.test.ui.theme.machine_test_compose.TaskViewModel
         startDestination = ScreenRoutes.TaskList.route
     ) {
         composable(ScreenRoutes.TaskList.route) {
-            TaskListScreen(viewModel = viewModel, navController = navController)
+            TaskListScreen(
+                state = state,
+                onEvent = viewModel::onEvent,
+                onRowEditClick = {
+                    navController.navigate(ScreenRoutes.TaskCreate.route)
+                }
+            )
         }
 
         composable(ScreenRoutes.TaskCreate.route) {
-            CreateTaskPage(viewModel, navController)
+            CreateTaskPage(
+                state = state,
+                onEvent = viewModel::onEvent,
+                onSaveOrUpdate = {
+                    navController.navigate(ScreenRoutes.TaskList.route)
+                })
         }
     }
 }

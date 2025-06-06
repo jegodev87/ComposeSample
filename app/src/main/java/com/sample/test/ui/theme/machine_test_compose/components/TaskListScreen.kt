@@ -15,31 +15,46 @@ import androidx.compose.material.Card
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import com.sample.test.ui.theme.machine_test_compose.ScreenRoutes
 import com.sample.test.ui.theme.machine_test_compose.TaskViewModel
+import com.sample.test.ui.theme.mvi_task.TaskEvent
+import com.sample.test.ui.theme.mvi_task.TaskState
 
 @Composable
-fun TaskListScreen(viewModel: TaskViewModel, navController: NavHostController?) {
-    val state by viewModel.taskListUiState.collectAsState()
-    when (state) {
-        is TaskViewModel.TaskListUiState.Success -> {
+fun TaskListScreen(
+    state: TaskState,
+    onEvent: (TaskEvent) -> Unit,
+    onRowEditClick: () -> Unit
+) {
+
+    when {
+        state.isLoading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+
+        state.tasks.isEmpty() -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No tasks found", style = MaterialTheme.typography.body2)
+            }
+        }
+
+        else -> {
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val taskList = (state as TaskViewModel.TaskListUiState.Success).list
+                val taskList = state.tasks
                 items(taskList, key = { it.rowID }) { taskDetails ->
 
                     Card(
@@ -51,8 +66,8 @@ fun TaskListScreen(viewModel: TaskViewModel, navController: NavHostController?) 
                                 if (taskDetails.isCompleted) {
 
                                 } else {
-                                    viewModel.selectTask(taskDetails)
-                                    navController?.navigate(ScreenRoutes.TaskCreate.route)
+                                    onEvent.invoke(TaskEvent.EditTask(taskDetails))
+                                    onRowEditClick()
                                 }
                             }
                             .fillMaxWidth()
@@ -92,11 +107,9 @@ fun TaskListScreen(viewModel: TaskViewModel, navController: NavHostController?) 
                                     Checkbox(
                                         checked = taskDetails.isCompleted,
                                         onCheckedChange = { isChecked ->
-                                            val updatedTask = taskDetails.copy(isCompleted = isChecked)
-                                            viewModel.selectTask(updatedTask)
-                                            viewModel.saveOrUpdateTask(updatedTask){
-
-                                            }
+                                            val updatedTask =
+                                                taskDetails.copy(isCompleted = isChecked)
+                                            onEvent(TaskEvent.ToggleComplete(taskId = taskDetails.rowID))
                                         },
                                         colors = CheckboxDefaults.colors(
                                             checkedColor = Color.Red,
@@ -124,32 +137,6 @@ fun TaskListScreen(viewModel: TaskViewModel, navController: NavHostController?) 
 
             }
         }
-
-        is TaskViewModel.TaskListUiState.Empty -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "No Task List Found",
-                    modifier = Modifier.fillMaxSize(),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        TaskViewModel.TaskListUiState.Loading -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                CircularProgressIndicator(
-                    strokeWidth = 1.dp,
-                    backgroundColor = Color.Blue
-                )
-            }
-        }
     }
+
 }

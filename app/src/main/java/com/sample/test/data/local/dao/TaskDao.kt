@@ -11,11 +11,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TaskDao {
 
-    /*@Query("SELECT * FROM TaskEntity")
-    suspend fun getAll(): List<TaskEntity>*/
 
-    @Query("SELECT * FROM TaskEntity ORDER BY id DESC")
-    fun getAll(): List<TaskEntity> // Changed to Flow
+
+    @Query("SELECT * FROM TaskEntity")
+    fun getTasks(): List<TaskEntity>
 
     @Query("SELECT * FROM TaskEntity")
     fun getAllTasks(): Flow<List<TaskEntity>>
@@ -26,4 +25,5 @@ interface TaskDao {
 
     @Update
     suspend fun update(task: TaskEntity) : Int
+
 }
